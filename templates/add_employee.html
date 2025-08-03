@@ -1,0 +1,701 @@
+{% extends "base.html" %}
+
+{% block title %}Employee Onboarding - PerformancePro{% endblock %}
+
+{% block content %}
+<!-- Onboarding Header -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card-enterprise">
+            <div class="card-header-enterprise">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h3 class="mb-1">Employee Onboarding System</h3>
+                        <p class="mb-0 opacity-90">Streamlined employee registration with automated performance tracking setup</p>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="badge bg-success">
+                            <i class="fas fa-shield-check me-1"></i>Secure & Compliant
+                        </span>
+                        <a href="{{ url_for('employees') }}" class="btn btn-outline-light btn-sm">
+                            <i class="fas fa-arrow-left me-1"></i>Back to Directory
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Onboarding Form -->
+    <div class="col-xl-8 col-lg-7">
+        <form id="employeeOnboardingForm" class="needs-validation" novalidate>
+            <!-- Personal Information Section -->
+            <div class="card-enterprise mb-4">
+                <div class="card-header-enterprise">
+                    <h5 class="mb-0">
+                        <i class="fas fa-user me-2"></i>Personal Information
+                        <span class="badge bg-light text-dark ms-2">Step 1 of 3</span>
+                    </h5>
+                </div>
+                <div class="card-body-enterprise">
+                    <div class="row">
+                        <div class="col-md-8 mb-4">
+                            <label for="fullName" class="form-label-enterprise">
+                                Full Legal Name *
+                                <i class="fas fa-info-circle text-muted ms-1" data-bs-toggle="tooltip" 
+                                   title="Enter the employee's complete legal name as it appears on official documents"></i>
+                            </label>
+                            <input type="text" class="form-control form-control-enterprise" id="fullName" 
+                                   name="name" required minlength="2" maxlength="100"
+                                   placeholder="e.g., John Michael Smith">
+                            <div class="invalid-feedback">Please provide a valid full name (2-100 characters).</div>
+                        </div>
+                        
+                        <div class="col-md-4 mb-4">
+                            <label for="employeeId" class="form-label-enterprise">
+                                Employee ID
+                                <i class="fas fa-info-circle text-muted ms-1" data-bs-toggle="tooltip" 
+                                   title="Unique identifier will be auto-generated based on year and sequence"></i>
+                            </label>
+                            <input type="text" class="form-control form-control-enterprise" id="employeeId" 
+                                   placeholder="Auto-generated" readonly>
+                            <small class="text-muted">System will generate: EMP2024XXXX</small>
+                        </div>
+                        
+                        <div class="col-md-6 mb-4">
+                            <label for="emailAddress" class="form-label-enterprise">
+                                Corporate Email Address *
+                                <i class="fas fa-info-circle text-muted ms-1" data-bs-toggle="tooltip" 
+                                   title="Primary business email for system notifications and reports"></i>
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="fas fa-envelope text-muted"></i>
+                                </span>
+                                <input type="email" class="form-control form-control-enterprise" id="emailAddress" 
+                                       name="email" required
+                                       placeholder="john.smith@company.com">
+                            </div>
+                            <div class="invalid-feedback">Please provide a valid corporate email address.</div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-4">
+                            <label for="joinDate" class="form-label-enterprise">
+                                Official Start Date *
+                                <i class="fas fa-info-circle text-muted ms-1" data-bs-toggle="tooltip" 
+                                   title="Employee's first day of work - affects tenure calculations and benefit eligibility"></i>
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="fas fa-calendar-alt text-muted"></i>
+                                </span>
+                                <input type="date" class="form-control form-control-enterprise" id="joinDate" 
+                                       name="join_date" required>
+                            </div>
+                            <div class="invalid-feedback">Please select a valid start date.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Role & Organization Section -->
+            <div class="card-enterprise mb-4">
+                <div class="card-header-enterprise">
+                    <h5 class="mb-0">
+                        <i class="fas fa-briefcase me-2"></i>Role & Organization Structure
+                        <span class="badge bg-light text-dark ms-2">Step 2 of 3</span>
+                    </h5>
+                </div>
+                <div class="card-body-enterprise">
+                    <div class="row">
+                        <div class="col-md-6 mb-4">
+                            <label for="designation" class="form-label-enterprise">
+                                Job Title/Designation *
+                                <i class="fas fa-info-circle text-muted ms-1" data-bs-toggle="tooltip" 
+                                   title="Official job title that will appear on reports and performance reviews"></i>
+                            </label>
+                            <select class="form-select form-control-enterprise" id="designation" name="designation" required>
+                                <option value="">Select Job Title</option>
+                                <optgroup label="Engineering">
+                                    <option value="Software Engineer">Software Engineer</option>
+                                    <option value="Senior Software Engineer">Senior Software Engineer</option>
+                                    <option value="Lead Software Engineer">Lead Software Engineer</option>
+                                    <option value="Principal Engineer">Principal Engineer</option>
+                                    <option value="Engineering Manager">Engineering Manager</option>
+                                    <option value="DevOps Engineer">DevOps Engineer</option>
+                                    <option value="QA Engineer">QA Engineer</option>
+                                    <option value="Senior QA Engineer">Senior QA Engineer</option>
+                                </optgroup>
+                                <optgroup label="Product & Design">
+                                    <option value="Product Manager">Product Manager</option>
+                                    <option value="Senior Product Manager">Senior Product Manager</option>
+                                    <option value="Product Owner">Product Owner</option>
+                                    <option value="UI/UX Designer">UI/UX Designer</option>
+                                    <option value="Senior UI/UX Designer">Senior UI/UX Designer</option>
+                                    <option value="Product Designer">Product Designer</option>
+                                </optgroup>
+                                <optgroup label="Business & Operations">
+                                    <option value="Business Analyst">Business Analyst</option>
+                                    <option value="Senior Business Analyst">Senior Business Analyst</option>
+                                    <option value="Operations Manager">Operations Manager</option>
+                                    <option value="Project Manager">Project Manager</option>
+                                    <option value="Scrum Master">Scrum Master</option>
+                                </optgroup>
+                                <optgroup label="Sales & Marketing">
+                                    <option value="Sales Executive">Sales Executive</option>
+                                    <option value="Senior Sales Executive">Senior Sales Executive</option>
+                                    <option value="Sales Manager">Sales Manager</option>
+                                    <option value="Marketing Specialist">Marketing Specialist</option>
+                                    <option value="Digital Marketing Manager">Digital Marketing Manager</option>
+                                </optgroup>
+                                <optgroup label="Leadership">
+                                    <option value="Team Lead">Team Lead</option>
+                                    <option value="Department Head">Department Head</option>
+                                    <option value="Director">Director</option>
+                                    <option value="VP Engineering">VP Engineering</option>
+                                    <option value="CTO">Chief Technology Officer</option>
+                                </optgroup>
+                            </select>
+                            <div class="invalid-feedback">Please select a job title.</div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-4">
+                            <label for="department" class="form-label-enterprise">
+                                Department *
+                                <i class="fas fa-info-circle text-muted ms-1" data-bs-toggle="tooltip" 
+                                   title="Primary department for reporting and budget allocation"></i>
+                            </label>
+                            <select class="form-select form-control-enterprise" id="department" name="department_id" required>
+                                <option value="">Select Department</option>
+                                {% for dept in departments %}
+                                <option value="{{ dept.id }}">{{ dept.name }}</option>
+                                {% endfor %}
+                            </select>
+                            <div class="invalid-feedback">Please select a department.</div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-4">
+                            <label for="reportingManager" class="form-label-enterprise">
+                                Direct Reporting Manager
+                                <i class="fas fa-info-circle text-muted ms-1" data-bs-toggle="tooltip" 
+                                   title="Immediate supervisor responsible for performance reviews"></i>
+                            </label>
+                            <input type="text" class="form-control form-control-enterprise" id="reportingManager" 
+                                   name="reporting_manager" maxlength="100"
+                                   placeholder="e.g., Sarah Johnson, Engineering Manager">
+                            <small class="text-muted">Optional - can be updated later</small>
+                        </div>
+                        
+                        <div class="col-md-6 mb-4">
+                            <label for="employmentType" class="form-label-enterprise">
+                                Employment Type *
+                                <i class="fas fa-info-circle text-muted ms-1" data-bs-toggle="tooltip" 
+                                   title="Employment classification affecting benefits and performance tracking"></i>
+                            </label>
+                            <select class="form-select form-control-enterprise" id="employmentType" name="employment_type" required>
+                                <option value="">Select Employment Type</option>
+                                <option value="Full-time" selected>Full-time (40 hrs/week)</option>
+                                <option value="Part-time">Part-time (< 40 hrs/week)</option>
+                                <option value="Contract">Contract (Fixed term)</option>
+                                <option value="Intern">Intern/Trainee</option>
+                                <option value="Consultant">Consultant</option>
+                            </select>
+                            <div class="invalid-feedback">Please select employment type.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Compensation & Performance Section -->
+            <div class="card-enterprise mb-4">
+                <div class="card-header-enterprise">
+                    <h5 class="mb-0">
+                        <i class="fas fa-money-bill-wave me-2"></i>Compensation & Performance Setup
+                        <span class="badge bg-light text-dark ms-2">Step 3 of 3</span>
+                    </h5>
+                </div>
+                <div class="card-body-enterprise">
+                    <div class="alert alert-info border-0 mb-4" style="background: #f0f9ff;">
+                        <div class="d-flex">
+                            <i class="fas fa-info-circle text-info me-3 mt-1"></i>
+                            <div>
+                                <strong>Performance-Based Compensation:</strong>
+                                <p class="mb-2">Our system automatically calculates monthly bonuses based on performance metrics:</p>
+                                <ul class="mb-0">
+                                    <li><strong>Maximum Bonus:</strong> 50% of base salary</li>
+                                    <li><strong>Performance Points:</strong> Earned daily based on work quality and efficiency</li>
+                                    <li><strong>Automatic Calculation:</strong> No manual intervention required</li>
+                                    <li><strong>Transparent Process:</strong> Real-time bonus projections available</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-4">
+                            <label for="baseSalary" class="form-label-enterprise">
+                                Monthly Base Salary (₹) *
+                                <i class="fas fa-info-circle text-muted ms-1" data-bs-toggle="tooltip" 
+                                   title="Fixed monthly salary before performance bonuses. This affects maximum bonus calculation (50% cap)."></i>
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text">₹</span>
+                                <input type="number" class="form-control form-control-enterprise" id="baseSalary" 
+                                       name="base_salary" required min="15000" max="1000000" step="1000"
+                                       placeholder="50000">
+                                <span class="input-group-text">.00</span>
+                            </div>
+                            <div class="invalid-feedback">Please enter a valid salary between ₹15,000 and ₹10,00,000.</div>
+                            <div class="mt-2">
+                                <small class="text-muted">
+                                    <strong>Bonus Impact:</strong> 
+                                    Maximum monthly bonus = <span id="maxBonusDisplay">₹25,000</span> (50% of base)
+                                </small>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-4">
+                            <label class="form-label-enterprise">
+                                Performance Tracking Setup
+                                <i class="fas fa-info-circle text-muted ms-1" data-bs-toggle="tooltip" 
+                                   title="Automatic performance tracking will begin from the employee's start date"></i>
+                            </label>
+                            <div class="bg-light rounded p-3">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    <span class="fw-medium">Daily Performance Entry</span>
+                                </div>
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    <span class="fw-medium">Automatic Bonus Calculation</span>
+                                </div>
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    <span class="fw-medium">Real-time Analytics Dashboard</span>
+                                </div>
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    <span class="fw-medium">Monthly Report Generation</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Compensation Breakdown Preview -->
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="card border-0" style="background: #f8f9fa;">
+                                <div class="card-body">
+                                    <h6 class="card-title text-muted mb-3">
+                                        <i class="fas fa-calculator me-2"></i>Compensation Structure Preview
+                                    </h6>
+                                    <div class="row text-center">
+                                        <div class="col-md-3">
+                                            <div class="metric-card border-0" style="background: white;">
+                                                <div class="metric-value text-primary" id="previewBaseSalary">₹50,000</div>
+                                                <div class="metric-label">Monthly Base</div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="metric-card border-0" style="background: white;">
+                                                <div class="metric-value text-success" id="previewMaxBonus">₹25,000</div>
+                                                <div class="metric-label">Max Monthly Bonus</div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="metric-card border-0" style="background: white;">
+                                                <div class="metric-value text-info" id="previewMaxTotal">₹75,000</div>
+                                                <div class="metric-label">Max Total (150%)</div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="metric-card border-0" style="background: white;">
+                                                <div class="metric-value text-warning" id="previewAnnualMax">₹9,00,000</div>
+                                                <div class="metric-label">Max Annual Total</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Form Actions -->
+            <div class="card-enterprise">
+                <div class="card-body-enterprise">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="text-muted">
+                            <i class="fas fa-shield-check me-1"></i>
+                            All information is encrypted and stored securely
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-outline-secondary" onclick="clearForm()">
+                                <i class="fas fa-undo me-1"></i>Clear Form
+                            </button>
+                            <button type="button" class="btn btn-outline-primary" onclick="previewEmployee()">
+                                <i class="fas fa-eye me-1"></i>Preview
+                            </button>
+                            <button type="submit" class="btn btn-success-enterprise">
+                                <i class="fas fa-user-plus me-1"></i>
+                                <span id="submitButtonText">Complete Onboarding</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+    
+    <!-- Onboarding Guide Sidebar -->
+    <div class="col-xl-4 col-lg-5">
+        <!-- Progress Tracker -->
+        <div class="card-enterprise mb-4">
+            <div class="card-header-enterprise">
+                <h6 class="mb-0">
+                    <i class="fas fa-tasks me-2"></i>Onboarding Progress
+                </h6>
+            </div>
+            <div class="card-body-enterprise">
+                <div class="progress mb-3" style="height: 10px;">
+                    <div class="progress-bar bg-success" id="progressBar" style="width: 0%"></div>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <small class="text-muted">Progress</small>
+                    <small class="fw-semibold" id="progressText">0% Complete</small>
+                </div>
+                
+                <div class="mt-4">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="bg-success text-white rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 30px; height: 30px;">
+                            <i class="fas fa-check" style="font-size: 0.8rem;"></i>
+                        </div>
+                        <div>
+                            <div class="fw-medium">Personal Information</div>
+                            <small class="text-muted">Basic employee details</small>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="bg-light border rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 30px; height: 30px;">
+                            <span class="text-muted fw-semibold" style="font-size: 0.8rem;">2</span>
+                        </div>
+                        <div>
+                            <div class="fw-medium">Role & Organization</div>
+                            <small class="text-muted">Job title and department</small>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center">
+                        <div class="bg-light border rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 30px; height: 30px;">
+                            <span class="text-muted fw-semibold" style="font-size: 0.8rem;">3</span>
+                        </div>
+                        <div>
+                            <div class="fw-medium">Compensation Setup</div>
+                            <small class="text-muted">Salary and performance tracking</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- System Information -->
+        <div class="card-enterprise mb-4">
+            <div class="card-header-enterprise">
+                <h6 class="mb-0">
+                    <i class="fas fa-info-circle me-2"></i>Performance System Guide
+                </h6>
+            </div>
+            <div class="card-body-enterprise">
+                <div class="mb-3">
+                    <div class="fw-semibold text-primary mb-1">Daily Performance Tracking</div>
+                    <small class="text-muted">
+                        Employees log daily work hours, complexity, and quality metrics. 
+                        System automatically calculates efficiency and performance points.
+                    </small>
+                </div>
+                
+                <div class="mb-3">
+                    <div class="fw-semibold text-success mb-1">Bonus Calculation Formula</div>
+                    <small class="text-muted">
+                        Monthly Bonus = MIN(Total Points × Rate, 50% of Base Salary)
+                        <br>Rate = (Base Salary × 0.5) ÷ (Working Days × 10)
+                    </small>
+                </div>
+                
+                <div class="mb-3">
+                    <div class="fw-semibold text-info mb-1">Performance Grades</div>
+                    <small class="text-muted">
+                        A+ (12+ pts/day), A (10+ pts/day), B (8+ pts/day), 
+                        C (6+ pts/day), D (&lt;6 pts/day)
+                    </small>
+                </div>
+                
+                <div class="alert alert-warning border-0" style="background: #fefbf3;">
+                    <small>
+                        <i class="fas fa-exclamation-triangle me-1"></i>
+                        <strong>Important:</strong> Task failures zero out daily points. 
+                        Quality and efficiency directly impact earnings.
+                    </small>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Quick Reference -->
+        <div class="card-enterprise">
+            <div class="card-header-enterprise">
+                <h6 class="mb-0">
+                    <i class="fas fa-bookmark me-2"></i>Salary Benchmarks
+                </h6>
+            </div>
+            <div class="card-body-enterprise">
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="text-muted">Entry Level</span>
+                        <span class="fw-semibold">₹25K - ₹45K</span>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="text-muted">Mid Level</span>
+                        <span class="fw-semibold">₹45K - ₹80K</span>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="text-muted">Senior Level</span>
+                        <span class="fw-semibold">₹80K - ₹150K</span>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="text-muted">Leadership</span>
+                        <span class="fw-semibold">₹150K+</span>
+                    </div>
+                </div>
+                
+                <small class="text-muted">
+                    <i class="fas fa-chart-line me-1"></i>
+                    Salary ranges are guidelines. Adjust based on experience, 
+                    market conditions, and company budget.
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Preview Modal -->
+<div class="modal fade" id="previewModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Employee Information Preview</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="previewContent">
+                <!-- Preview content will be loaded here -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Edit Information</button>
+                <button type="button" class="btn btn-success" onclick="submitFromPreview()">Confirm & Submit</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Form validation and interaction
+    document.addEventListener('DOMContentLoaded', function() {
+        // Set default date to today
+        document.getElementById('joinDate').value = new Date().toISOString().split('T')[0];
+        
+        // Initialize tooltips
+        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+        
+        // Setup form validation
+        setupFormValidation();
+        
+        // Setup salary calculator
+        setupSalaryCalculator();
+        
+        // Setup progress tracking
+        setupProgressTracking();
+    });
+    
+    function setupFormValidation() {
+        const form = document.getElementById('employeeOnboardingForm');
+        
+        form.addEventListener('submit', function(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            
+            if (form.checkValidity()) {
+                submitEmployee();
+            } else {
+                // Show validation feedback
+                form.classList.add('was-validated');
+                PerformancePro.showError('Please fill in all required fields correctly');
+            }
+        });
+        
+        // Real-time validation
+        const inputs = form.querySelectorAll('input, select');
+        inputs.forEach(input => {
+            input.addEventListener('blur', function() {
+                if (this.checkValidity()) {
+                    this.classList.remove('is-invalid');
+                    this.classList.add('is-valid');
+                } else {
+                    this.classList.remove('is-valid');
+                    this.classList.add('is-invalid');
+                }
+                updateProgress();
+            });
+        });
+    }
+    
+    function setupSalaryCalculator() {
+        const salaryInput = document.getElementById('baseSalary');
+        
+        salaryInput.addEventListener('input', function() {
+            const salary = parseFloat(this.value) || 50000;
+            const maxBonus = salary * 0.5;
+            const maxTotal = salary + maxBonus;
+            const maxAnnual = maxTotal * 12;
+            
+            // Update displays
+            document.getElementById('maxBonusDisplay').textContent = formatCurrency(maxBonus);
+            document.getElementById('previewBaseSalary').textContent = formatCurrency(salary);
+            document.getElementById('previewMaxBonus').textContent = formatCurrency(maxBonus);
+            document.getElementById('previewMaxTotal').textContent = formatCurrency(maxTotal);
+            document.getElementById('previewAnnualMax').textContent = formatCurrency(maxAnnual);
+        });
+    }
+    
+    function setupProgressTracking() {
+        const form = document.getElementById('employeeOnboardingForm');
+        const requiredFields = form.querySelectorAll('input[required], select[required]');
+        
+        function updateProgress() {
+            let filledFields = 0;
+            requiredFields.forEach(field => {
+                if (field.value.trim() !== '') {
+                    filledFields++;
+                }
+            });
+            
+            const progress = (filledFields / requiredFields.length) * 100;
+            document.getElementById('progressBar').style.width = progress + '%';
+            document.getElementById('progressText').textContent = Math.round(progress) + '% Complete';
+            
+            // Update step indicators
+            updateStepIndicators(progress);
+        }
+        
+        // Listen for changes
+        requiredFields.forEach(field => {
+            field.addEventListener('input', updateProgress);
+            field.addEventListener('change', updateProgress);
+        });
+        
+        // Initial update
+        updateProgress();
+    }
+    
+    function updateStepIndicators(progress) {
+        // This would update the visual step indicators based on progress
+        // Implementation depends on specific UI requirements
+    }
+    
+    function previewEmployee() {
+        const form = document.getElementById('employeeOnboardingForm');
+        const formData = new FormData(form);
+        
+        const previewHTML = `
+            <div class="row">
+                <div class="col-md-6">
+                    <h6 class="text-muted mb-3">Personal Information</h6>
+                    <div class="mb-2"><strong>Name:</strong> ${formData.get('name') || 'Not specified'}</div>
+                    <div class="mb-2"><strong>Email:</strong> ${formData.get('email') || 'Not specified'}</div>
+                    <div class="mb-2"><strong>Start Date:</strong> ${formData.get('join_date') || 'Not specified'}</div>
+                </div>
+                <div class="col-md-6">
+                    <h6 class="text-muted mb-3">Role & Compensation</h6>
+                    <div class="mb-2"><strong>Designation:</strong> ${formData.get('designation') || 'Not specified'}</div>
+                    <div class="mb-2"><strong>Department:</strong> ${document.getElementById('department').selectedOptions[0]?.text || 'Not specified'}</div>
+                    <div class="mb-2"><strong>Base Salary:</strong> ₹${Number(formData.get('base_salary') || 0).toLocaleString()}</div>
+                    <div class="mb-2"><strong>Max Bonus:</strong> ₹${Number((formData.get('base_salary') || 0) * 0.5).toLocaleString()}</div>
+                </div>
+            </div>
+        `;
+        
+        document.getElementById('previewContent').innerHTML = previewHTML;
+        new bootstrap.Modal(document.getElementById('previewModal')).show();
+    }
+    
+    function submitEmployee() {
+        const form = document.getElementById('employeeOnboardingForm');
+        const formData = new FormData(form);
+        
+        // Convert FormData to JSON
+        const employeeData = {};
+        formData.forEach((value, key) => {
+            employeeData[key] = value;
+        });
+        
+        // Show loading state
+        const submitBtn = document.querySelector('#employeeOnboardingForm button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Processing...';
+        submitBtn.disabled = true;
+        
+        PerformancePro.apiCall('/add_employee', {
+            method: 'POST',
+            body: JSON.stringify(employeeData)
+        }).then(data => {
+            PerformancePro.showSuccess(data.message || 'Employee onboarded successfully!');
+            
+            // Show completion message with employee ID
+            setTimeout(() => {
+                window.location.href = '/employees';
+            }, 2000);
+            
+        }).catch(error => {
+            console.error('Error:', error);
+        }).finally(() => {
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+        });
+    }
+    
+    function submitFromPreview() {
+        // Close modal and submit
+        bootstrap.Modal.getInstance(document.getElementById('previewModal')).hide();
+        submitEmployee();
+    }
+    
+    function clearForm() {
+        if (confirm('Are you sure you want to clear all form data?')) {
+            document.getElementById('employeeOnboardingForm').reset();
+            document.getElementById('joinDate').value = new Date().toISOString().split('T')[0];
+            setupSalaryCalculator(); // Reset salary calculator
+            PerformancePro.showSuccess('Form cleared successfully');
+        }
+    }
+    
+    function formatCurrency(amount) {
+        return new Intl.NumberFormat('en-IN', {
+            style: 'currency',
+            currency: 'INR',
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
+        }).format(amount);
+    }
+</script>
+{% endblock %}

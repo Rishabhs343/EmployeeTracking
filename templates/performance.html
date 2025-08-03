@@ -1,0 +1,703 @@
+{% extends "base.html" %}
+
+{% block title %}{{ employee.name }} - Performance Management{% endblock %}
+
+{% block content %}
+<!-- Employee Profile Header -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card-enterprise">
+            <div class="card-header-enterprise">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center">
+                        <div class="avatar-lg me-4">
+                            <div class="bg-white text-primary rounded-circle d-flex align-items-center justify-content-center" 
+                                 style="width: 60px; height: 60px; font-weight: 700; font-size: 1.5rem;">
+                                {{ employee.name[:2].upper() }}
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="mb-1">{{ employee.name }}</h3>
+                            <p class="mb-1 opacity-90">{{ employee.designation }} • ID: {{ employee.employee_id }}</p>
+                            <p class="mb-0 opacity-75">{{ current_month }} {{ current_year }} Performance Tracking</p>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <button class="btn btn-outline-light btn-sm" onclick="exportPerformance()">
+                            <i class="fas fa-download me-1"></i>Export Report
+                        </button>
+                        <a href="{{ url_for('dashboard') }}" class="btn btn-outline-light btn-sm">
+                            <i class="fas fa-arrow-left me-1"></i>Back to Dashboard
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body-enterprise">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-briefcase text-primary me-2"></i>
+                            <div>
+                                <small class="text-muted d-block">Department</small>
+                                <span class="fw-semibold">{{ employee.department.name if employee.department else 'N/A' }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-money-bill-wave text-success me-2"></i>
+                            <div>
+                                <small class="text-muted d-block">Base Salary</small>
+                                <span class="fw-semibold text-success">₹{{ "{:,.0f}".format(employee.base_salary) }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-calendar-alt text-info me-2"></i>
+                            <div>
+                                <small class="text-muted d-block">Join Date</small>
+                                <span class="fw-semibold">{{ employee.join_date.strftime('%B %d, %Y') }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-user-tie text-warning me-2"></i>
+                            <div>
+                                <small class="text-muted d-block">Reporting Manager</small>
+                                <span class="fw-semibold">{{ employee.reporting_manager or 'N/A' }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Month-to-Date Summary -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="metric-card">
+            <div class="metric-value text-primary" id="totalPoints">
+                {{ "%.1f"|format(mtd_summary.total_points if mtd_summary else 0) }}
+            </div>
+            <div class="metric-label">Total Performance Points</div>
+            <div class="metric-change text-muted">
+                <i class="fas fa-target me-1"></i>Target: {{ working_days|length * 10 }} points
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="metric-card">
+            <div class="metric-value text-success" id="projectedBonus">
+                ₹{{ "{:,.0f}".format(mtd_summary.final_bonus if mtd_summary else 0) }}
+            </div>
+            <div class="metric-label">Projected Monthly Bonus</div>
+            <div class="metric-change text-muted">
+                <i class="fas fa-percentage me-1"></i>{{ "%.1f"|format((mtd_summary.final_bonus / employee.base_salary * 100) if mtd_summary and mtd_summary.final_bonus else 0) }}% of base salary
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="metric-card">
+            <div class="metric-value text-info" id="avgEfficiency">
+                {{ "%.0f"|format((mtd_summary.avg_efficiency * 100) if mtd_summary else 0) }}%
+            </div>
+            <div class="metric-label">Average Efficiency</div>
+            <div class="metric-change {% if mtd_summary and mtd_summary.avg_efficiency >= 1 %}text-success{% else %}text-warning{% endif %}">
+                <i class="fas fa-{% if mtd_summary and mtd_summary.avg_efficiency >= 1 %}check{% else %}exclamation-triangle{% endif %} me-1"></i>
+                {% if mtd_summary and mtd_summary.avg_efficiency >= 1 %}Above target{% else %}Below target{% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="metric-card">
+            <div class="metric-value text-warning" id="workDays">
+                {{ mtd_summary.total_workdays - mtd_summary.leave_days if mtd_summary else 0 }}
+            </div>
+            <div class="metric-label">Active Work Days</div>
+            <div class="metric-change text-muted">
+                <i class="fas fa-calendar-check me-1"></i>{{ mtd_summary.leave_days if mtd_summary else 0 }} leave days taken
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Performance Entry Interface -->
+<div class="row">
+    <div class="col-xl-9 col-lg-8">
+        <div class="card-enterprise">
+            <div class="card-header-enterprise">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-clipboard-list me-2"></i>Daily Performance Entry
+                    </h5>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="badge bg-success">Auto-Save Enabled</span>
+                        <button class="btn btn-outline-light btn-sm" onclick="bulkFillDefaults()">
+                            <i class="fas fa-magic me-1"></i>Fill Defaults
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body-enterprise p-0">
+                <!-- Data Entry Instructions -->
+                <div class="bg-light border-bottom p-3">
+                    <div class="row text-center">
+                        <div class="col-md-4">
+                            <div class="d-flex align-items-center justify-content-center">
+                                <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 30px; height: 30px;">
+                                    <i class="fas fa-clock" style="font-size: 0.8rem;"></i>
+                                </div>
+                                <small class="text-muted">
+                                    <strong>Hours:</strong> Meeting + Completed should align with assigned time
+                                </small>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="d-flex align-items-center justify-content-center">
+                                <div class="bg-success text-white rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 30px; height: 30px;">
+                                    <i class="fas fa-star" style="font-size: 0.8rem;"></i>
+                                </div>
+                                <small class="text-muted">
+                                    <strong>Quality:</strong> Complexity 1.0 = Normal, QA 1.0 = Perfect
+                                </small>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="d-flex align-items-center justify-content-center">
+                                <div class="bg-warning text-white rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 30px; height: 30px;">
+                                    <i class="fas fa-exclamation-triangle" style="font-size: 0.8rem;"></i>
+                                </div>
+                                <small class="text-muted">
+                                    <strong>Impact:</strong> Task failures zero out all points for that day
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-enterprise mb-0">
+                        <thead>
+                            <tr>
+                                <th style="width: 100px;">Date</th>
+                                <th style="width: 60px;">Day</th>
+                                <th style="width: 100px;" data-bs-toggle="tooltip" title="Time spent in meetings (reduces available work time)">
+                                    Meeting Hrs
+                                    <i class="fas fa-info-circle text-muted ms-1"></i>
+                                </th>
+                                <th style="width: 100px;" data-bs-toggle="tooltip" title="Target working hours for the day">
+                                    Assigned Hrs
+                                    <i class="fas fa-info-circle text-muted ms-1"></i>
+                                </th>
+                                <th style="width: 100px;" data-bs-toggle="tooltip" title="Actual hours worked on tasks">
+                                    Completed Hrs
+                                    <i class="fas fa-info-circle text-muted ms-1"></i>
+                                </th>
+                                <th style="width: 100px;" data-bs-toggle="tooltip" title="Task difficulty (0.5=Easy, 1.0=Normal, 2.0=Hard)">
+                                    Complexity
+                                    <i class="fas fa-info-circle text-muted ms-1"></i>
+                                </th>
+                                <th style="width: 100px;" data-bs-toggle="tooltip" title="Quality factor (0.5=Issues, 1.0=Perfect, 1.5=Exceptional)">
+                                    QA Factor
+                                    <i class="fas fa-info-circle text-muted ms-1"></i>
+                                </th>
+                                <th style="width: 80px;" data-bs-toggle="tooltip" title="Did any critical task fail?">
+                                    Failed
+                                    <i class="fas fa-info-circle text-muted ms-1"></i>
+                                </th>
+                                <th style="width: 80px;" data-bs-toggle="tooltip" title="Was employee on leave?">
+                                    Leave
+                                    <i class="fas fa-info-circle text-muted ms-1"></i>
+                                </th>
+                                <th style="width: 100px;" class="bg-light">Available Hrs</th>
+                                <th style="width: 100px;" class="bg-light">Efficiency</th>
+                                <th style="width: 100px;" class="bg-light">Points Earned</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for workday in working_days %}
+                            {% set perf = performances.get(workday) %}
+                            <tr data-date="{{ workday.strftime('%Y-%m-%d') }}" class="performance-row">
+                                <td class="fw-semibold">{{ workday.strftime('%m/%d') }}</td>
+                                <td class="text-muted">{{ workday.strftime('%a') }}</td>
+                                
+                                <!-- Input Fields with Enhanced Styling -->
+                                <td>
+                                    <input type="number" class="form-control form-control-enterprise form-control-sm" 
+                                           name="meeting_hrs" step="0.5" min="0" max="9"
+                                           value="{{ perf.meeting_hrs if perf else 0 }}"
+                                           onchange="updatePerformance(this)" 
+                                           data-field="meeting_hrs">
+                                </td>
+                                <td>
+                                    <input type="number" class="form-control form-control-enterprise form-control-sm" 
+                                           name="assigned_hrs" step="0.5" min="1" max="12"
+                                           value="{{ perf.assigned_hrs if perf else 9 }}"
+                                           onchange="updatePerformance(this)"
+                                           data-field="assigned_hrs">
+                                </td>
+                                <td>
+                                    <input type="number" class="form-control form-control-enterprise form-control-sm" 
+                                           name="completed_hrs" step="0.5" min="0" max="16"
+                                           value="{{ perf.completed_hrs if perf else 0 }}"
+                                           onchange="updatePerformance(this)"
+                                           data-field="completed_hrs">
+                                </td>
+                                <td>
+                                    <select class="form-select form-select-sm form-control-enterprise" 
+                                            name="complexity_factor" onchange="updatePerformance(this)"
+                                            data-field="complexity_factor">
+                                        <option value="0.5" {{ 'selected' if perf and perf.complexity_factor == 0.5 else '' }}>0.5 - Simple</option>
+                                        <option value="0.8" {{ 'selected' if perf and perf.complexity_factor == 0.8 else '' }}>0.8 - Easy</option>
+                                        <option value="1.0" {{ 'selected' if not perf or perf.complexity_factor == 1.0 else '' }}>1.0 - Normal</option>
+                                        <option value="1.2" {{ 'selected' if perf and perf.complexity_factor == 1.2 else '' }}>1.2 - Medium</option>
+                                        <option value="1.5" {{ 'selected' if perf and perf.complexity_factor == 1.5 else '' }}>1.5 - Hard</option>
+                                        <option value="2.0" {{ 'selected' if perf and perf.complexity_factor == 2.0 else '' }}>2.0 - Very Hard</option>
+                                        <option value="2.5" {{ 'selected' if perf and perf.complexity_factor == 2.5 else '' }}>2.5 - Expert</option>
+                                    </select>
+                                </td>
+                                <td>
+                                    <select class="form-select form-select-sm form-control-enterprise" 
+                                            name="qa_factor" onchange="updatePerformance(this)"
+                                            data-field="qa_factor">
+                                        <option value="0.3" {{ 'selected' if perf and perf.qa_factor == 0.3 else '' }}>0.3 - Poor</option>
+                                        <option value="0.5" {{ 'selected' if perf and perf.qa_factor == 0.5 else '' }}>0.5 - Below Par</option>
+                                        <option value="0.7" {{ 'selected' if perf and perf.qa_factor == 0.7 else '' }}>0.7 - Needs Work</option>
+                                        <option value="1.0" {{ 'selected' if not perf or perf.qa_factor == 1.0 else '' }}>1.0 - Perfect</option>
+                                        <option value="1.2" {{ 'selected' if perf and perf.qa_factor == 1.2 else '' }}>1.2 - Excellent</option>
+                                        <option value="1.5" {{ 'selected' if perf and perf.qa_factor == 1.5 else '' }}>1.5 - Outstanding</option>
+                                    </select>
+                                </td>
+                                <td>
+                                    <select class="form-select form-select-sm form-control-enterprise" 
+                                            name="task_failed" onchange="updatePerformance(this)"
+                                            data-field="task_failed">
+                                        <option value="false" {{ 'selected' if not perf or not perf.task_failed else '' }}>No</option>
+                                        <option value="true" {{ 'selected' if perf and perf.task_failed else '' }}>Yes</option>
+                                    </select>
+                                </td>
+                                <td>
+                                    <select class="form-select form-select-sm form-control-enterprise" 
+                                            name="leave_taken" onchange="updatePerformance(this)"
+                                            data-field="leave_taken">
+                                        <option value="false" {{ 'selected' if not perf or not perf.leave_taken else '' }}>No</option>
+                                        <option value="true" {{ 'selected' if perf and perf.leave_taken else '' }}>Yes</option>
+                                    </select>
+                                </td>
+                                
+                                <!-- Calculated Fields -->
+                                <td class="bg-light">
+                                    <span class="badge bg-info available-hrs">{{ '{:.1f}'.format(perf.available_hrs) if perf else '9.0' }}</span>
+                                </td>
+                                <td class="bg-light">
+                                    <span class="badge efficiency {{ 'bg-success' if perf and perf.efficiency >= 1 else 'bg-warning' if perf and perf.efficiency >= 0.8 else 'bg-danger' }}">
+                                        {{ '{:.0f}%'.format(perf.efficiency * 100) if perf else '0%' }}
+                                    </span>
+                                </td>
+                                <td class="bg-light">
+                                    <span class="badge bg-primary approved-points fs-6">{{ '{:.1f}'.format(perf.approved_points) if perf else '0.0' }}</span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Performance Insights Sidebar -->
+    <div class="col-xl-3 col-lg-4">
+        <!-- Performance Chart -->
+        <div class="card-enterprise mb-4">
+            <div class="card-header-enterprise">
+                <h6 class="mb-0">
+                    <i class="fas fa-chart-line me-2"></i>Daily Performance Trend
+                </h6>
+            </div>
+            <div class="card-body-enterprise">
+                <canvas id="dailyPerformanceChart" height="180"></canvas>
+            </div>
+        </div>
+        
+        <!-- Detailed Monthly Metrics -->
+        <div class="card-enterprise mb-4">
+            <div class="card-header-enterprise">
+                <h6 class="mb-0">
+                    <i class="fas fa-analytics me-2"></i>Detailed Metrics
+                </h6>
+            </div>
+            <div class="card-body-enterprise">
+                <div class="row text-center">
+                    <div class="col-6 mb-3">
+                        <div class="h5 text-danger" id="taskFailures">{{ mtd_summary.task_failures if mtd_summary else 0 }}</div>
+                        <small class="text-muted">Task Failures</small>
+                    </div>
+                    <div class="col-6 mb-3">
+                        <div class="h5 text-success" id="overtimeDays">{{ mtd_summary.overtime_days if mtd_summary else 0 }}</div>
+                        <small class="text-muted">Overtime Days</small>
+                    </div>
+                    <div class="col-6 mb-3">
+                        <div class="h5 text-info" id="totalHours">{{ "%.0f"|format(mtd_summary.total_hours) if mtd_summary else 0 }}</div>
+                        <small class="text-muted">Total Hours</small>
+                    </div>
+                    <div class="col-6 mb-3">
+                        <div class="h5 text-warning" id="avgPointsPerDay">{{ "%.1f"|format(mtd_summary.total_points / (mtd_summary.total_workdays - mtd_summary.leave_days)) if mtd_summary and (mtd_summary.total_workdays - mtd_summary.leave_days) > 0 else 0 }}</div>
+                        <small class="text-muted">Avg Points/Day</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Bonus Calculation Breakdown -->
+        <div class="card-enterprise mb-4">
+            <div class="card-header-enterprise">
+                <h6 class="mb-0">
+                    <i class="fas fa-calculator me-2"></i>Bonus Calculation
+                </h6>
+            </div>
+            <div class="card-body-enterprise">
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <small class="text-muted">Base Salary</small>
+                        <span class="fw-semibold">₹{{ "{:,.0f}".format(employee.base_salary) }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <small class="text-muted">Bonus Rate/Point</small>
+                        <span class="fw-semibold">₹{{ "%.2f"|format(mtd_summary.bonus_rate) if mtd_summary else "0.00" }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <small class="text-muted">Current Points</small>
+                        <span class="fw-semibold text-primary">{{ "%.1f"|format(mtd_summary.total_points) if mtd_summary else "0.0" }}</span>
+                    </div>
+                    <hr class="my-2">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <small class="text-muted">Calculated Bonus</small>
+                        <span class="fw-semibold text-success">₹{{ "{:,.0f}".format(mtd_summary.calculated_bonus) if mtd_summary else "0" }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <small class="text-muted">Max Bonus (50%)</small>
+                        <span class="fw-semibold text-warning">₹{{ "{:,.0f}".format(employee.base_salary * 0.5) }}</span>
+                    </div>
+                    <hr class="my-2">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="fw-bold">Final Bonus</span>
+                        <span class="fw-bold text-success h6 mb-0">₹{{ "{:,.0f}".format(mtd_summary.final_bonus) if mtd_summary else "0" }}</span>
+                    </div>
+                </div>
+                
+                <div class="progress mb-2" style="height: 8px;">
+                    <div class="progress-bar bg-success" style="width: {{ (mtd_summary.final_bonus / (employee.base_salary * 0.5) * 100) if mtd_summary and mtd_summary.final_bonus else 0 }}%"></div>
+                </div>
+                <small class="text-muted">{{ "%.1f"|format((mtd_summary.final_bonus / (employee.base_salary * 0.5) * 100) if mtd_summary and mtd_summary.final_bonus else 0) }}% of maximum bonus</small>
+            </div>
+        </div>
+        
+        <!-- Performance Tips -->
+        <div class="card-enterprise">
+            <div class="card-header-enterprise">
+                <h6 class="mb-0">
+                    <i class="fas fa-lightbulb me-2"></i>Performance Optimization
+                </h6>
+            </div>
+            <div class="card-body-enterprise">
+                <div class="alert alert-success border-0 mb-2" style="background: #f0f9f4;">
+                    <small><i class="fas fa-target me-1"></i> <strong>Target:</strong> Maintain 100%+ efficiency for optimal points</small>
+                </div>
+                <div class="alert alert-warning border-0 mb-2" style="background: #fefbf3;">
+                    <small><i class="fas fa-exclamation-triangle me-1"></i> <strong>Critical:</strong> Task failures eliminate all daily points</small>
+                </div>
+                <div class="alert alert-info border-0 mb-0" style="background: #f0f9ff;">
+                    <small><i class="fas fa-star me-1"></i> <strong>Excellence:</strong> Quality factor >1.0 multiplies your points</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const employeeId = {{ employee.id }};
+    let dailyChart;
+    
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function() {
+        initializeDailyChart();
+        
+        // Enable tooltips
+        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+    });
+    
+    function initializeDailyChart() {
+        const ctx = document.getElementById('dailyPerformanceChart').getContext('2d');
+        
+        // Fetch real performance trend data for this employee
+        fetch(`/api/employee/${employeeId}/performance_trend`)
+            .then(response => response.json())
+            .then(apiData => {
+                dailyChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: apiData.labels,
+                        datasets: [{
+                            label: 'Daily Points',
+                            data: apiData.points,
+                            borderColor: 'rgb(37, 99, 235)',
+                            backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.3
+                        }, {
+                            label: 'Target (10 points)',
+                            data: apiData.target,
+                            borderColor: 'rgb(16, 185, 129)',
+                            borderDash: [5, 5],
+                            borderWidth: 1,
+                            fill: false
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { 
+                                display: false 
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 15,
+                                grid: { color: 'rgba(0,0,0,0.05)' }
+                            },
+                            x: {
+                                grid: { color: 'rgba(0,0,0,0.05)' }
+                            }
+                        }
+                    }
+                });
+            })
+            .catch(error => {
+                console.error('Error loading performance trend:', error);
+                // Fallback: Get data from the table
+                const dailyData = [];
+                const labels = [];
+                
+                document.querySelectorAll('.performance-row').forEach(row => {
+                    const date = new Date(row.dataset.date);
+                    const points = parseFloat(row.querySelector('.approved-points').textContent) || 0;
+                    labels.push(date.getDate());
+                    dailyData.push(points);
+                });
+                
+                dailyChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Daily Points',
+                            data: dailyData,
+                            borderColor: 'rgb(37, 99, 235)',
+                            backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.3
+                        }, {
+                            label: 'Target (10 points)',
+                            data: new Array(labels.length).fill(10),
+                            borderColor: 'rgb(16, 185, 129)',
+                            borderDash: [5, 5],
+                            borderWidth: 1,
+                            fill: false
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { 
+                                display: false 
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 15,
+                                grid: { color: 'rgba(0,0,0,0.05)' }
+                            },
+                            x: {
+                                grid: { color: 'rgba(0,0,0,0.05)' }
+                            }
+                        }
+                    }
+                });
+            });
+    }
+    
+    // Performance update function
+    function updatePerformance(input) {
+        const row = input.closest('.performance-row');
+        const date = row.dataset.date;
+        
+        // Collect all form data
+        const formData = {
+            employee_id: employeeId,
+            date: date,
+            meeting_hrs: parseFloat(row.querySelector('[name="meeting_hrs"]').value) || 0,
+            assigned_hrs: parseFloat(row.querySelector('[name="assigned_hrs"]').value) || 9,
+            completed_hrs: parseFloat(row.querySelector('[name="completed_hrs"]').value) || 0,
+            complexity_factor: parseFloat(row.querySelector('[name="complexity_factor"]').value) || 1.0,
+            qa_factor: parseFloat(row.querySelector('[name="qa_factor"]').value) || 1.0,
+            task_failed: row.querySelector('[name="task_failed"]').value === 'true',
+            leave_taken: row.querySelector('[name="leave_taken"]').value === 'true'
+        };
+        
+        // Update display immediately for better UX
+        updateRowCalculations(row, formData);
+        
+        // Add visual feedback
+        input.style.borderColor = '#3b82f6';
+        input.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
+        
+        // Save to backend
+        PerformancePro.apiCall('/api/performance', {
+            method: 'POST',
+            body: JSON.stringify(formData)
+        }).then(data => {
+            // Update with server response
+            row.querySelector('.available-hrs').textContent = data.data.available_hrs.toFixed(1);
+            row.querySelector('.efficiency').textContent = data.data.efficiency + '%';
+            row.querySelector('.approved-points').textContent = data.data.approved_points.toFixed(1);
+            
+            // Update efficiency badge color
+            const efficiencyBadge = row.querySelector('.efficiency');
+            efficiencyBadge.className = 'badge efficiency ' + 
+                (data.data.efficiency >= 100 ? 'bg-success' : 
+                 data.data.efficiency >= 80 ? 'bg-warning' : 'bg-danger');
+            
+            // Update summary and chart
+            updateMonthlySummary();
+            updateDailyChart();
+            
+            // Success feedback
+            input.style.borderColor = '#10b981';
+            setTimeout(() => {
+                input.style.borderColor = '';
+                input.style.boxShadow = '';
+            }, 2000);
+            
+        }).catch(error => {
+            // Error feedback
+            input.style.borderColor = '#ef4444';
+            setTimeout(() => {
+                input.style.borderColor = '';
+                input.style.boxShadow = '';
+            }, 3000);
+        });
+    }
+    
+    function updateRowCalculations(row, data) {
+        // Calculate available hours
+        let availableHrs = data.leave_taken ? 0 : Math.max(0, 9 - data.meeting_hrs);
+        
+        // Calculate efficiency
+        let efficiency = availableHrs === 0 ? 0 : (data.completed_hrs / availableHrs);
+        
+        // Calculate raw points
+        let rawPoints = data.completed_hrs * data.complexity_factor * data.qa_factor;
+        
+        // Calculate approved points
+        let approvedPoints = data.task_failed ? 0 : efficiency * rawPoints;
+        
+        // Update display
+        row.querySelector('.available-hrs').textContent = availableHrs.toFixed(1);
+        row.querySelector('.efficiency').textContent = Math.round(efficiency * 100) + '%';
+        row.querySelector('.approved-points').textContent = approvedPoints.toFixed(1);
+    }
+    
+    function updateMonthlySummary() {
+        let totalPoints = 0;
+        let workDays = 0;
+        let totalHours = 0;
+        let taskFailures = 0;
+        let overtimeDays = 0;
+        
+        document.querySelectorAll('.performance-row').forEach(row => {
+            const points = parseFloat(row.querySelector('.approved-points').textContent) || 0;
+            const completed = parseFloat(row.querySelector('[name="completed_hrs"]').value) || 0;
+            const assigned = parseFloat(row.querySelector('[name="assigned_hrs"]').value) || 9;
+            const isLeave = row.querySelector('[name="leave_taken"]').value === 'true';
+            const isFailed = row.querySelector('[name="task_failed"]').value === 'true';
+            
+            totalPoints += points;
+            totalHours += completed;
+            
+            if (!isLeave) workDays++;
+            if (isFailed) taskFailures++;
+            if (completed > assigned) overtimeDays++;
+        });
+        
+        // Update metrics
+        document.getElementById('totalPoints').textContent = totalPoints.toFixed(1);
+        document.getElementById('workDays').textContent = workDays;
+        document.getElementById('totalHours').textContent = Math.round(totalHours);
+        document.getElementById('taskFailures').textContent = taskFailures;
+        document.getElementById('overtimeDays').textContent = overtimeDays;
+        
+        // Update bonus calculations
+        const bonusRate = {{ (employee.base_salary * 0.5) / (working_days|length * 10) }};
+        const calculatedBonus = totalPoints * bonusRate;
+        const maxBonus = {{ employee.base_salary * 0.5 }};
+        const finalBonus = Math.min(calculatedBonus, maxBonus);
+        
+        document.getElementById('projectedBonus').textContent = '₹' + finalBonus.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        document.getElementById('avgPointsPerDay').textContent = workDays > 0 ? (totalPoints / workDays).toFixed(1) : '0.0';
+        
+        // Update efficiency
+        const avgEfficiency = workDays > 0 ? (totalPoints / (workDays * 10) * 100) : 0;
+        document.getElementById('avgEfficiency').textContent = Math.round(avgEfficiency) + '%';
+    }
+    
+    function updateDailyChart() {
+        const dailyData = [];
+        document.querySelectorAll('.approved-points').forEach(element => {
+            dailyData.push(parseFloat(element.textContent) || 0);
+        });
+        
+        dailyChart.data.datasets[0].data = dailyData;
+        dailyChart.update();
+    }
+    
+    function bulkFillDefaults() {
+        if (confirm('Fill default values for all empty entries? This will set 9 hours completed for all days with no data.')) {
+            document.querySelectorAll('.performance-row').forEach(row => {
+                const completedInput = row.querySelector('[name="completed_hrs"]');
+                if (parseFloat(completedInput.value) === 0) {
+                    completedInput.value = 9;
+                    updatePerformance(completedInput);
+                }
+            });
+            PerformancePro.showSuccess('Default values applied successfully');
+        }
+    }
+    
+    function exportPerformance() {
+        const currentDate = new Date();
+        const year = currentDate.getFullYear();
+        const month = currentDate.getMonth() + 1;
+        
+        PerformancePro.showSuccess('Generating detailed performance report...');
+        setTimeout(() => {
+            window.open(`/api/export_excel/${employeeId}/${year}/${month}`, '_blank');
+        }, 1000);
+    }
+</script>
+{% endblock %}

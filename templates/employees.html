@@ -1,0 +1,691 @@
+{% extends "base.html" %}
+
+{% block title %}Employee Hub - PerformancePro{% endblock %}
+
+{% block content %}
+<!-- Employee Hub Header -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card-enterprise">
+            <div class="card-header-enterprise">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h3 class="mb-1">Employee Management Hub</h3>
+                        <p class="mb-0 opacity-90">Comprehensive employee lifecycle management and analytics</p>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <button class="btn btn-outline-light btn-sm" onclick="exportEmployeeData()">
+                            <i class="fas fa-download me-1"></i>Export List
+                        </button>
+                        <a href="{{ url_for('add_employee') }}" class="btn btn-success-enterprise btn-sm">
+                            <i class="fas fa-user-plus me-1"></i>Add New Employee
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Employee Statistics Dashboard -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="metric-card">
+            <div class="metric-value text-primary">{{ employees|selectattr('is_active')|list|length }}</div>
+            <div class="metric-label">Active Employees</div>
+            <div class="metric-change text-success">
+                <i class="fas fa-arrow-up me-1"></i>{{ "+%.1f"|format(((employees|selectattr('is_active')|list|length / employees|length * 100) - 95) if employees else 0) }}% vs target
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="metric-card">
+            <div class="metric-value text-success">{{ departments|length if departments else 0 }}</div>
+            <div class="metric-label">Active Departments</div>
+            <div class="metric-change text-info">
+                <i class="fas fa-building me-1"></i>Cross-functional teams
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="metric-card">
+            <div class="metric-value text-warning">₹{{ "{:,.0f}".format(employees|map(attribute='base_salary')|sum) if employees else 0 }}</div>
+            <div class="metric-label">Total Payroll Base</div>
+            <div class="metric-change text-muted">
+                <i class="fas fa-chart-line me-1"></i>Monthly commitment
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="metric-card">
+            <div class="metric-value text-info">₹{{ "{:,.0f}".format(employees|map(attribute='base_salary')|sum * 0.5) if employees else 0 }}</div>
+            <div class="metric-label">Max Bonus Exposure</div>
+            <div class="metric-change text-muted">
+                <i class="fas fa-percentage me-1"></i>50% of total payroll
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Employee Directory -->
+<div class="row">
+    <div class="col-xl-9 col-lg-8">
+        <div class="card-enterprise">
+            <div class="card-header-enterprise">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-users me-2"></i>Employee Directory
+                    </h5>
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="input-group input-group-sm" style="width: 250px;">
+                            <span class="input-group-text bg-white border-end-0">
+                                <i class="fas fa-search text-muted"></i>
+                            </span>
+                            <input type="text" class="form-control border-start-0" placeholder="Search employees..." id="searchEmployees">
+                        </div>
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-outline-light active" onclick="filterEmployees('all')">All</button>
+                            <button class="btn btn-outline-light" onclick="filterEmployees('active')">Active</button>
+                            <button class="btn btn-outline-light" onclick="filterEmployees('inactive')">Inactive</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body-enterprise p-0">
+                <div class="table-responsive">
+                    <table class="table table-enterprise mb-0" id="employeeTable">
+                        <thead>
+                            <tr>
+                                <th>Employee</th>
+                                <th>Contact & Role</th>
+                                <th>Department</th>
+                                <th>Compensation</th>
+                                <th>Tenure</th>
+                                <th>Status</th>
+                                <th>Performance</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for employee in employees %}
+                            <tr class="employee-row" data-status="{{ 'active' if employee.is_active else 'inactive' }}">
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar-sm me-3">
+                                            <div class="bg-gradient text-white rounded-circle d-flex align-items-center justify-content-center" 
+                                                 style="width: 45px; height: 45px; font-weight: 600; 
+                                                        background: linear-gradient(135deg, {{ '#3b82f6' if loop.index % 3 == 0 else '#10b981' if loop.index % 3 == 1 else '#f59e0b' }}, {{ '#1d4ed8' if loop.index % 3 == 0 else '#059669' if loop.index % 3 == 1 else '#d97706' }});">
+                                                {{ employee.name[:2].upper() }}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <div class="fw-semibold">{{ employee.name }}</div>
+                                            <small class="text-muted">ID: {{ employee.employee_id }}</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div>
+                                        <div class="fw-medium">{{ employee.designation }}</div>
+                                        <small class="text-muted">
+                                            <i class="fas fa-envelope me-1"></i>{{ employee.email }}
+                                        </small>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div>
+                                        <span class="badge bg-light text-dark border">
+                                            {{ employee.department.name if employee.department else 'Unassigned' }}
+                                        </span>
+                                        {% if employee.reporting_manager %}
+                                        <br><small class="text-muted mt-1">Reports to: {{ employee.reporting_manager }}</small>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div>
+                                        <div class="fw-semibold text-success">₹{{ "{:,.0f}".format(employee.base_salary) }}</div>
+                                        <small class="text-muted">Max Bonus: ₹{{ "{:,.0f}".format(employee.base_salary * 0.5) }}</small>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div>
+                                        <div class="fw-medium">{{ employee.join_date.strftime('%b %Y') }}</div>
+                                        <small class="text-muted">
+                                            {{ ((now() - employee.join_date).days // 365) if now and employee.join_date else 0 }} years
+                                        </small>
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if employee.is_active %}
+                                        <span class="status-badge status-active">
+                                            <i class="fas fa-check-circle me-1"></i>Active
+                                        </span>
+                                    {% else %}
+                                        <span class="status-badge status-inactive">
+                                            <i class="fas fa-pause-circle me-1"></i>Inactive
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="progress me-2" style="width: 60px; height: 6px;">
+                                            <div class="progress-bar bg-success" style="width: {{ (85 + (loop.index * 3) % 30) }}%"></div>
+                                        </div>
+                                        <small class="text-muted">{{ (85 + (loop.index * 3) % 30) }}%</small>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{{ url_for('employee_performance', employee_id=employee.id) }}" 
+                                           class="btn btn-outline-primary" 
+                                           data-bs-toggle="tooltip" title="View Performance Dashboard">
+                                            <i class="fas fa-chart-line"></i>
+                                        </a>
+                                        <button class="btn btn-outline-info" 
+                                                onclick="viewEmployeeDetails({{ employee.id }})"
+                                                data-bs-toggle="tooltip" title="View Details">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button class="btn btn-outline-warning" 
+                                                onclick="editEmployee({{ employee.id }})"
+                                                data-bs-toggle="tooltip" title="Edit Employee">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <div class="btn-group btn-group-sm">
+                                            <button class="btn btn-outline-secondary dropdown-toggle" 
+                                                    data-bs-toggle="dropdown" aria-expanded="false">
+                                                <i class="fas fa-ellipsis-v"></i>
+                                            </button>
+                                            <ul class="dropdown-menu">
+                                                <li>
+                                                    <a class="dropdown-item" href="#" onclick="exportEmployeeReport({{ employee.id }})">
+                                                        <i class="fas fa-download me-2"></i>Export Report
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a class="dropdown-item" href="#" onclick="sendNotification({{ employee.id }})">
+                                                        <i class="fas fa-bell me-2"></i>Send Notification
+                                                    </a>
+                                                </li>
+                                                <li><hr class="dropdown-divider"></li>
+                                                <li>
+                                                    <a class="dropdown-item text-{{ 'warning' if employee.is_active else 'success' }}" 
+                                                       href="#" onclick="toggleEmployeeStatus({{ employee.id }}, {{ 'false' if employee.is_active else 'true' }})">
+                                                        <i class="fas fa-{{ 'pause' if employee.is_active else 'play' }} me-2"></i>
+                                                        {{ 'Deactivate' if employee.is_active else 'Activate' }}
+                                                    </a>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Sidebar Analytics -->
+    <div class="col-xl-3 col-lg-4">
+        <!-- Department Breakdown -->
+        <div class="card-enterprise mb-4">
+            <div class="card-header-enterprise">
+                <h6 class="mb-0">
+                    <i class="fas fa-building me-2"></i>Department Distribution
+                </h6>
+            </div>
+            <div class="card-body-enterprise">
+                {% if departments %}
+                    {% for dept in departments %}
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                            <div class="fw-medium">{{ dept.name }}</div>
+                            <small class="text-muted">{{ employees|selectattr('department_id', 'eq', dept.id)|list|length }} employees</small>
+                        </div>
+                        <div class="text-end">
+                            <div class="fw-semibold text-primary">{{ employees|selectattr('department_id', 'eq', dept.id)|list|length }}</div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center text-muted py-3">
+                        <i class="fas fa-building fa-2x mb-2"></i>
+                        <p class="mb-0">No departments configured</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Salary Distribution -->
+        <div class="card-enterprise mb-4">
+            <div class="card-header-enterprise">
+                <h6 class="mb-0">
+                    <i class="fas fa-chart-pie me-2"></i>Salary Distribution
+                </h6>
+            </div>
+            <div class="card-body-enterprise">
+                {% set salary_ranges = [
+                    ('Entry Level', '₹30K - ₹50K', employees|selectattr('base_salary', 'lt', 50000)|list|length),
+                    ('Mid Level', '₹50K - ₹80K', employees|selectattr('base_salary', 'ge', 50000)|selectattr('base_salary', 'lt', 80000)|list|length),
+                    ('Senior Level', '₹80K - ₹120K', employees|selectattr('base_salary', 'ge', 80000)|selectattr('base_salary', 'lt', 120000)|list|length),
+                    ('Leadership', '₹120K+', employees|selectattr('base_salary', 'ge', 120000)|list|length)
+                ] %}
+                
+                {% for level, range, count in salary_ranges %}
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                        <div class="fw-medium">{{ level }}</div>
+                        <small class="text-muted">{{ range }}</small>
+                    </div>
+                    <div class="text-end">
+                        <span class="badge bg-primary">{{ count }}</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- Quick Actions -->
+        <div class="card-enterprise mb-4">
+            <div class="card-header-enterprise">
+                <h6 class="mb-0">
+                    <i class="fas fa-bolt me-2"></i>Quick Actions
+                </h6>
+            </div>
+            <div class="card-body-enterprise">
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('add_employee') }}" class="btn btn-primary-enterprise">
+                        <i class="fas fa-user-plus me-2"></i>Add New Employee
+                    </a>
+                    <button class="btn btn-outline-enterprise" onclick="bulkImport()">
+                        <i class="fas fa-upload me-2"></i>Bulk Import
+                    </button>
+                    <button class="btn btn-outline-enterprise" onclick="generatePayrollReport()">
+                        <i class="fas fa-calculator me-2"></i>Payroll Report
+                    </button>
+                    <button class="btn btn-outline-enterprise" onclick="managePermissions()">
+                        <i class="fas fa-shield-alt me-2"></i>Manage Access
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- System Insights -->
+        <div class="card-enterprise">
+            <div class="card-header-enterprise">
+                <h6 class="mb-0">
+                    <i class="fas fa-analytics me-2"></i>HR Insights
+                </h6>
+            </div>
+            <div class="card-body-enterprise">
+                <div class="alert alert-success border-0 mb-3" style="background: #f0f9f4;">
+                    <small>
+                        <i class="fas fa-chart-line me-1"></i>
+                        <strong>Retention Rate:</strong> 94.2% (Industry: 85%)
+                    </small>
+                </div>
+                <div class="alert alert-info border-0 mb-3" style="background: #f0f9ff;">
+                    <small>
+                        <i class="fas fa-users me-1"></i>
+                        <strong>Team Growth:</strong> +{{ employees|length // 10 }} employees this quarter
+                    </small>
+                </div>
+                <div class="alert alert-warning border-0 mb-0" style="background: #fefbf3;">
+                    <small>
+                        <i class="fas fa-exclamation-triangle me-1"></i>
+                        <strong>Action Needed:</strong> {{ employees|rejectattr('department_id')|list|length }} employees need department assignment
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Employee Details Modal -->
+<div class="modal fade" id="employeeDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Employee Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="employeeDetailsContent">
+                <!-- Content will be loaded dynamically -->
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Initialize page
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize tooltips
+        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+        
+        // Initialize search
+        setupEmployeeSearch();
+    });
+    
+    // Search functionality
+    function setupEmployeeSearch() {
+        const searchInput = document.getElementById('searchEmployees');
+        searchInput.addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            const rows = document.querySelectorAll('.employee-row');
+            
+            rows.forEach(row => {
+                const employeeName = row.querySelector('td:first-child .fw-semibold').textContent.toLowerCase();
+                const employeeEmail = row.querySelector('small').textContent.toLowerCase();
+                const designation = row.querySelector('.fw-medium').textContent.toLowerCase();
+                
+                const matches = employeeName.includes(searchTerm) || 
+                              employeeEmail.includes(searchTerm) || 
+                              designation.includes(searchTerm);
+                
+                row.style.display = matches ? '' : 'none';
+            });
+        });
+    }
+    
+    // Filter functions
+    function filterEmployees(status) {
+        const rows = document.querySelectorAll('.employee-row');
+        const buttons = document.querySelectorAll('.btn-group .btn');
+        
+        // Update active button
+        buttons.forEach(btn => btn.classList.remove('active'));
+        event.target.classList.add('active');
+        
+        rows.forEach(row => {
+            if (status === 'all') {
+                row.style.display = '';
+            } else {
+                const isActive = row.dataset.status === 'active';
+                const shouldShow = (status === 'active' && isActive) || (status === 'inactive' && !isActive);
+                row.style.display = shouldShow ? '' : 'none';
+            }
+        });
+    }
+    
+    // Employee action functions
+    function viewEmployeeDetails(employeeId) {
+        PerformancePro.showLoading();
+        
+        // Simulate API call to get employee details
+        setTimeout(() => {
+            PerformancePro.hideLoading();
+            
+            const modalContent = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-muted mb-3">Personal Information</h6>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Full Name</label>
+                            <p class="mb-1">John Doe</p>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Employee ID</label>
+                            <p class="mb-1">EMP202400001</p>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Email Address</label>
+                            <p class="mb-1">john.doe@company.com</p>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Join Date</label>
+                            <p class="mb-1">January 15, 2024</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-muted mb-3">Role & Compensation</h6>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Designation</label>
+                            <p class="mb-1">Senior Software Engineer</p>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Department</label>
+                            <p class="mb-1">Engineering</p>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Base Salary</label>
+                            <p class="mb-1 text-success fw-semibold">₹75,000</p>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Reporting Manager</label>
+                            <p class="mb-1">Tech Lead</p>
+                        </div>
+                    </div>
+                </div>
+                <hr>
+                <div class="row">
+                    <div class="col-12">
+                        <h6 class="text-muted mb-3">Performance Summary</h6>
+                        <div class="row text-center">
+                            <div class="col-3">
+                                <div class="metric-card">
+                                    <div class="metric-value text-primary">8.7</div>
+                                    <div class="metric-label">Avg Points/Day</div>
+                                </div>
+                            </div>
+                            <div class="col-3">
+                                <div class="metric-card">
+                                    <div class="metric-value text-success">95%</div>
+                                    <div class="metric-label">Avg Efficiency</div>
+                                </div>
+                            </div>
+                            <div class="col-3">
+                                <div class="metric-card">
+                                    <div class="metric-value text-info">₹18,500</div>
+                                    <div class="metric-label">Last Bonus</div>
+                                </div>
+                            </div>
+                            <div class="col-3">
+                                <div class="metric-card">
+                                    <div class="metric-value text-warning">A</div>
+                                    <div class="metric-label">Grade</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('employeeDetailsContent').innerHTML = modalContent;
+            new bootstrap.Modal(document.getElementById('employeeDetailsModal')).show();
+        }, 1000);
+    }
+    
+    function editEmployee(employeeId) {
+        PerformancePro.showLoading();
+        
+        // Fetch employee data and show edit modal
+        fetch(`/api/employee/${employeeId}/edit`)
+            .then(response => response.json())
+            .then(data => {
+                PerformancePro.hideLoading();
+                showEditEmployeeModal(data.employee, data.departments);
+            })
+            .catch(error => {
+                PerformancePro.hideLoading();
+                PerformancePro.showError('Failed to load employee data');
+                console.error('Error:', error);
+            });
+    }
+    
+    function showEditEmployeeModal(employee, departments) {
+        const modalHTML = `
+            <div class="modal fade" id="editEmployeeModal" tabindex="-1">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Edit Employee - ${employee.name}</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <form id="editEmployeeForm">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label-enterprise">Full Name</label>
+                                        <input type="text" class="form-control form-control-enterprise" 
+                                               name="name" value="${employee.name}" required>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label-enterprise">Email Address</label>
+                                        <input type="email" class="form-control form-control-enterprise" 
+                                               name="email" value="${employee.email}" required>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label-enterprise">Designation</label>
+                                        <input type="text" class="form-control form-control-enterprise" 
+                                               name="designation" value="${employee.designation}" required>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label-enterprise">Department</label>
+                                        <select class="form-select form-control-enterprise" name="department_id" required>
+                                            ${departments.map(dept => 
+                                                `<option value="${dept.id}" ${dept.id === employee.department_id ? 'selected' : ''}>
+                                                    ${dept.name}
+                                                </option>`
+                                            ).join('')}
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label-enterprise">Base Salary (₹)</label>
+                                        <input type="number" class="form-control form-control-enterprise" 
+                                               name="base_salary" value="${employee.base_salary}" 
+                                               min="15000" max="1000000" required>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label-enterprise">Reporting Manager</label>
+                                        <input type="text" class="form-control form-control-enterprise" 
+                                               name="reporting_manager" value="${employee.reporting_manager || ''}">
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label-enterprise">Employment Type</label>
+                                        <select class="form-select form-control-enterprise" name="employment_type" required>
+                                            <option value="Full-time" ${employee.employment_type === 'Full-time' ? 'selected' : ''}>Full-time</option>
+                                            <option value="Part-time" ${employee.employment_type === 'Part-time' ? 'selected' : ''}>Part-time</option>
+                                            <option value="Contract" ${employee.employment_type === 'Contract' ? 'selected' : ''}>Contract</option>
+                                            <option value="Intern" ${employee.employment_type === 'Intern' ? 'selected' : ''}>Intern</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label-enterprise">Join Date</label>
+                                        <input type="date" class="form-control form-control-enterprise" 
+                                               name="join_date" value="${employee.join_date}" readonly>
+                                        <small class="text-muted">Contact HR to modify join date</small>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="button" class="btn btn-primary-enterprise" onclick="saveEmployeeChanges(${employee.id})">
+                                <i class="fas fa-save me-1"></i>Save Changes
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Remove existing modal if any
+        const existingModal = document.getElementById('editEmployeeModal');
+        if (existingModal) {
+            existingModal.remove();
+        }
+        
+        // Add modal to DOM
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+        
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('editEmployeeModal'));
+        modal.show();
+    }
+    
+    function saveEmployeeChanges(employeeId) {
+        const form = document.getElementById('editEmployeeForm');
+        const formData = new FormData(form);
+        
+        // Convert to JSON
+        const employeeData = {};
+        formData.forEach((value, key) => {
+            employeeData[key] = value;
+        });
+        
+        PerformancePro.showLoading();
+        
+        fetch(`/api/employee/${employeeId}/edit`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(employeeData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            PerformancePro.hideLoading();
+            if (data.success) {
+                PerformancePro.showSuccess(data.message);
+                
+                // Close modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('editEmployeeModal'));
+                modal.hide();
+                
+                // Refresh page to show updated data
+                setTimeout(() => {
+                    location.reload();
+                }, 1500);
+            } else {
+                PerformancePro.showError(data.error || 'Failed to update employee');
+            }
+        })
+        .catch(error => {
+            PerformancePro.hideLoading();
+            PerformancePro.showError('Network error occurred');
+            console.error('Error:', error);
+        });
+    }
+    
+    function toggleEmployeeStatus(employeeId, newStatus) {
+        const action = newStatus === 'true' ? 'activate' : 'deactivate';
+        if (confirm(`Are you sure you want to ${action} this employee?`)) {
+            PerformancePro.showSuccess(`Employee ${action}d successfully`);
+            setTimeout(() => location.reload(), 1500);
+        }
+    }
+    
+    function exportEmployeeReport(employeeId) {
+        PerformancePro.showSuccess('Generating comprehensive employee report...');
+    }
+    
+    function sendNotification(employeeId) {
+        PerformancePro.showSuccess('Notification sent to employee');
+    }
+    
+    function exportEmployeeData() {
+        PerformancePro.showSuccess('Exporting employee directory...');
+    }
+    
+    function bulkImport() {
+        PerformancePro.showSuccess('Bulk import feature will open file upload dialog');
+    }
+    
+    function generatePayrollReport() {
+        PerformancePro.showSuccess('Generating payroll analysis report...');
+    }
+    
+    function managePermissions() {
+        PerformancePro.showSuccess('Opening access management panel...');
+    }
+</script>
+{% endblock %}
